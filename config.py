@@ -27,3 +27,14 @@ DEFAULT_MENU_ALIGNMENT_KEYWORDS = [
 # Output paths
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 LEADS_OUTPUT_FILE = os.path.join(RESULTS_DIR, "leads_mode1.json")
+CAMPAIGN_OUTPUT_FILE = os.path.join(RESULTS_DIR, "campaign_mode2.json")
+CAMPAIGN_IMAGES_DIR = os.path.join(RESULTS_DIR, "campaign_images")
+
+# Pollinations image generation (Mode 2)
+POLLINATIONS_BASE_URL = os.getenv("POLLINATIONS_BASE_URL", "https://gen.pollinations.ai/image")
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
+POLLINATIONS_MODEL = os.getenv("POLLINATIONS_MODEL", "flux")
+POLLINATIONS_WIDTH = int(os.getenv("POLLINATIONS_WIDTH", "1024"))
+POLLINATIONS_HEIGHT = int(os.getenv("POLLINATIONS_HEIGHT", "1024"))
+POLLINATIONS_TIMEOUT_SEC = int(os.getenv("POLLINATIONS_TIMEOUT_SEC", "120"))
+POLLINATIONS_MAX_RETRIES = int(os.getenv("POLLINATIONS_MAX_RETRIES", "3"))

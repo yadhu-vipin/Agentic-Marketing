@@ -6,9 +6,9 @@ MODE 2 — Broadcast Ad Campaign
 Flow:
   Company submits their info
       → Generate ad copy (caption, hashtags, CTA)
-      → Generate an image prompt (for manual use or DALL-E later)
+      → Generate ad image via Pollinations (mode2/image_generator.py)
       → Post to Instagram Business via Facebook Graph API
-      → Save campaign details to campaign_mode2.json
+      → Save campaign details to results/campaign_mode2.json
 
 No scraping in Mode 2 — this is purely about creating
 and publishing content to social media.
@@ -22,8 +22,12 @@ REQUIREMENTS:
 """
 
 import json
+import os
 import requests
 from datetime import datetime
+
+import config
+from mode2.image_generator import generate_campaign_image
 
 
 # ── Company Input ─────────────────────────────────────────────────────────────
@@ -45,10 +49,8 @@ COMPANY_INPUT = {
     "instagram_business_account_id": "YOUR_IG_BUSINESS_ACCOUNT_ID",
     "facebook_page_access_token":    "YOUR_PAGE_ACCESS_TOKEN",
 
-    # Image to post (URL must be publicly accessible)
-    # For now: manually upload an image and put the URL here
-    # Later: plug in DALL-E to generate this automatically
-    "image_url": "https://your-public-image-url.com/bread.jpg",
+    # Optional fallback if Pollinations generation fails
+    "image_url": None,
 }
 
 
@@ -236,7 +238,9 @@ class InstagramPublisher:
 
 # ── Save Campaign ─────────────────────────────────────────────────────────────
 
-def save_campaign(campaign: dict, filename: str = "campaign_mode2.json"):
+def save_campaign(campaign: dict, filename: str | None = None):
+    filename = filename or config.CAMPAIGN_OUTPUT_FILE
+    os.makedirs(config.RESULTS_DIR, exist_ok=True)
     with open(filename, "w") as f:
         json.dump(campaign, f, indent=2)
     print(f"\n✓ Campaign saved → {filename}")
@@ -257,29 +261,53 @@ def run_mode2():
     print(ad["caption"])
     print("\n  ── Hashtags ───────────────────────────────")
     print(ad["hashtags"])
-    print("\n  ── Image Prompt (for DALL-E / manual use) ─")
+    print("\n  ── Image Prompt ───────────────────────────")
     print(ad["image_prompt"])
 
-    # Step 2 — Publish to Instagram
-    # Skip if credentials are placeholder
-    ig_id    = COMPANY_INPUT["instagram_business_account_id"]
-    token    = COMPANY_INPUT["facebook_page_access_token"]
-    image_url = COMPANY_INPUT["image_url"]
+    # Step 2 — Generate ad image via Pollinations
+    print("\n  Generating ad image via Pollinations...")
+    image_result = None
+    image_url = COMPANY_INPUT.get("image_url")
 
-    if "YOUR_" in ig_id or "YOUR_" in token or "your-public" in image_url:
+    try:
+        image_result = generate_campaign_image(
+            ad["image_prompt"],
+            company_name=COMPANY_INPUT["company_name"],
+        )
+        image_url = image_result["image_url"]
+        print(f"\n  ── Generated Image URL ────────────────────")
+        print(f"  {image_url}")
+        if image_result.get("local_path"):
+            print(f"  Local copy: {image_result['local_path']}")
+    except Exception as e:
+        print(f"\n  ✗ Pollinations image generation failed: {e}")
+        if image_url:
+            print(f"  Falling back to configured image_url: {image_url}")
+        else:
+            print("  No fallback image_url configured.")
+
+    # Step 3 — Publish to Instagram
+    ig_id = COMPANY_INPUT["instagram_business_account_id"]
+    token = COMPANY_INPUT["facebook_page_access_token"]
+
+    if not image_url:
+        print("\n  ⚠ No image available — skipping Instagram publish.")
+        publish_result = {"status": "skipped — no image generated"}
+    elif "YOUR_" in ig_id or "YOUR_" in token:
         print("\n  ⚠ Instagram credentials not set — skipping publish step.")
         print("    Fill in COMPANY_INPUT with real credentials to post live.")
         publish_result = {"status": "skipped — credentials not configured"}
     else:
-        publisher      = InstagramPublisher(ig_id, token)
+        publisher = InstagramPublisher(ig_id, token)
         publish_result = publisher.post(image_url, ad["full_post"])
 
-    # Step 3 — Save campaign record
+    # Step 4 — Save campaign record
     campaign = {
         "company":        COMPANY_INPUT["company_name"],
         "product":        COMPANY_INPUT["product"],
         "tone":           COMPANY_INPUT["tone"],
         "ad_copy":        ad,
+        "image":          image_result,
         "image_url":      image_url,
         "publish_result": publish_result,
         "created_at":     datetime.utcnow().isoformat(),
