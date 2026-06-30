@@ -1,0 +1,21 @@
+"""Centralized logging configuration."""
+
+import logging
+import sys
+
+
+def configure_logging(log_level: str = "INFO") -> None:
+    """
+    Call once at application startup (api/main.py or CLI entry point).
+    Uses stdlib logging — no external dependency required.
+    """
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=log_level.upper(),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+        force=True,
+    )
+    # Silence overly verbose third-party loggers
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
