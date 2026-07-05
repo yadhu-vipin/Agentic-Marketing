@@ -33,3 +33,13 @@ next-env.d.ts
 
 # OS
 .DS_Store
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/
+
+# Agent tools and skills
+.agents/
+skills-lock.json
+

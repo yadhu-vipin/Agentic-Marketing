@@ -10,7 +10,6 @@ from marketing_agent.capabilities.outreach import OutreachCapability
 from marketing_agent.capabilities.research import ResearchCapability
 from marketing_agent.capabilities.scoring import ScoringCapability
 from marketing_agent.services.llm.gemini import GeminiLLMService
-from marketing_agent.services.scraper.sample import SampleScraper
 from marketing_agent.workflows.base import Workflow
 
 
@@ -20,9 +19,8 @@ class LeadGenerationWorkflow(Workflow):
     def __init__(self) -> None:
         super().__init__()
         llm = GeminiLLMService()
-        # Phase 2: swap SampleScraper for SerpApiGoogleScraper when SERPAPI_API_KEY is set
         self.capabilities = [
-            ResearchCapability(SampleScraper(), llm),
+            ResearchCapability(llm=llm),
             ScoringCapability(llm),
             OutreachCapability(llm),
         ]

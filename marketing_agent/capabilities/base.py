@@ -10,6 +10,10 @@ Rules:
 import logging
 import time
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from marketing_agent.state import CampaignState
 
 logger = logging.getLogger(__name__)
 

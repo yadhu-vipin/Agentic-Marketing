@@ -43,7 +43,7 @@ export default async function GenerateCampaignPage({
         </p>
       </div>
 
-      <GenerateForm productId={product.id} />
+      <GenerateForm productId={product.id} defaultAudience={product.target_audience || ""} />
     </div>
   );
 }

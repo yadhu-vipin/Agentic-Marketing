@@ -24,11 +24,13 @@ export default async function CampaignPage({
         </Link>
         <h1 className="mt-2 text-2xl font-bold">{campaign.product_name}</h1>
         <p className="text-muted">
-          Review, edit, then publish or schedule each post.
+          {campaign.workflow === "lead_generation"
+            ? "Review discovered leads and outreach drafts."
+            : "Review, edit, then publish or schedule each post."}
         </p>
       </div>
 
-      {!isMetaConfigured() && (
+      {campaign.workflow !== "lead_generation" && !isMetaConfigured() && (
         <div className="card border-accent/30 text-sm text-muted">
           Meta publishing is not configured. Add <code>META_ACCESS_TOKEN</code>,{" "}
           <code>META_PAGE_ID</code>, and <code>META_IG_USER_ID</code> to publish to

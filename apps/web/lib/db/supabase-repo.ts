@@ -6,6 +6,9 @@ import type {
   Platform,
   Product,
   ProductInput,
+  WorkflowType,
+  CampaignConfig,
+  CampaignResults,
 } from "@/lib/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { NewCampaignInput, Repo } from "./repo";
@@ -65,6 +68,17 @@ function mapCampaign(row: DbRow): Campaign {
   const assets = Array.isArray(row.campaign_assets)
     ? row.campaign_assets.map((a) => mapAsset(a as DbRow))
     : [];
+  const workflow = (asString(row.workflow) || "organic_campaign") as WorkflowType;
+  
+  // Parse JSONB columns or fallback to valid default structures
+  const config = (row.config && typeof row.config === "object"
+    ? row.config
+    : { workflow, data: { platforms: [] } }) as CampaignConfig;
+    
+  const results = (row.results && typeof row.results === "object"
+    ? row.results
+    : { workflow, assets: [] }) as CampaignResults;
+
   return {
     id: String(row.id),
     user_id: String(row.user_id),
@@ -73,6 +87,9 @@ function mapCampaign(row: DbRow): Campaign {
     platforms: asStringArray(row.platforms) as Platform[],
     status: (asString(row.status, "draft") || "draft") as CampaignStatus,
     created_at: asString(row.created_at),
+    workflow,
+    config,
+    results,
     assets,
   };
 }
@@ -131,33 +148,40 @@ export class SupabaseRepo implements Repo {
         product_name: input.product.name,
         platforms: input.platforms,
         status: "ready",
+        workflow: input.workflow,
+        config: input.config,
+        results: input.results,
       })
       .select("*")
       .single();
     if (campaignError) throw new Error(campaignError.message);
 
-    const assetRows = input.assets.map((a) => ({
-      campaign_id: campaignRow.id,
-      platform: a.platform,
-      headline: a.headline,
-      body: a.body,
-      hashtags: a.hashtags,
-      cta: a.cta,
-      creative_prompt: a.creative_prompt,
-      creative_url: a.creative_url,
-      status: a.status,
-      scheduled_time: a.scheduled_time,
-      external_id: a.external_id,
-      error: a.error,
-    }));
+    let assets: any[] = [];
+    if (input.assets && input.assets.length > 0) {
+      const assetRows = input.assets.map((a) => ({
+        campaign_id: campaignRow.id,
+        platform: a.platform,
+        headline: a.headline,
+        body: a.body,
+        hashtags: a.hashtags,
+        cta: a.cta,
+        creative_prompt: a.creative_prompt,
+        creative_url: a.creative_url,
+        status: a.status,
+        scheduled_time: a.scheduled_time,
+        external_id: a.external_id,
+        error: a.error,
+      }));
 
-    const { data: assets, error: assetError } = await supabase
-      .from("campaign_assets")
-      .insert(assetRows)
-      .select("*");
-    if (assetError) throw new Error(assetError.message);
+      const { data: insertedAssets, error: assetError } = await supabase
+        .from("campaign_assets")
+        .insert(assetRows)
+        .select("*");
+      if (assetError) throw new Error(assetError.message);
+      assets = insertedAssets ?? [];
+    }
 
-    return mapCampaign({ ...campaignRow, campaign_assets: assets ?? [] });
+    return mapCampaign({ ...campaignRow, campaign_assets: assets });
   }
 
   async listCampaigns(userId: string): Promise<Campaign[]> {
@@ -190,6 +214,26 @@ export class SupabaseRepo implements Repo {
       .update({ status })
       .eq("id", campaignId);
     if (error) throw new Error(error.message);
+  }
+
+  async updateCampaignResults(
+    campaignId: string,
+    results: CampaignResults,
+    status?: CampaignStatus,
+  ): Promise<Campaign> {
+    const supabase = client();
+    const updateData: any = { results };
+    if (status) updateData.status = status;
+
+    const { data: campaignRow, error: campaignError } = await supabase
+      .from("campaigns")
+      .update(updateData)
+      .eq("id", campaignId)
+      .select("*, campaign_assets(*)")
+      .maybeSingle();
+    if (campaignError) throw new Error(campaignError.message);
+    if (!campaignRow) throw new Error("Campaign not found");
+    return mapCampaign(campaignRow);
   }
 
   async updateAsset(

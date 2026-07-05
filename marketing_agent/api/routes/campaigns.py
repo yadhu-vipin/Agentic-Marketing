@@ -1,76 +1,138 @@
-"""Campaign routes — create, retrieve, and run campaigns through the orchestrator."""
+"""Campaign resource routes — RESTful campaign state management."""
 
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from marketing_agent.api.dependencies import get_orchestrator
+from marketing_agent.api.dependencies import get_orchestrator, get_storage
 from marketing_agent.orchestrator import MarketingOrchestrator
 from marketing_agent.state import CampaignState
+from marketing_agent.services.storage.base import StorageService
 
 router = APIRouter()
 
 
-# ── Request / Response schemas ────────────────────────────────────────────────
+# ── Request Schemas ───────────────────────────────────────────────────────────
 
 class CreateCampaignRequest(BaseModel):
+    id: str
     name: str
-    product_name: str
-    product_description: str
-    platforms: list[str] = []
-    target_audience: Optional[str] = None
-    industry: Optional[str] = None
-    location: Optional[str] = None
+    workflow: str
+    config: dict
 
 
-class RunCampaignRequest(BaseModel):
-    workflow: str   # "organic_campaign" | "lead_generation" | "content_only" | "performance_campaign"
+class UpdateCampaignRequest(BaseModel):
+    name: Optional[str] = None
+    workflow: Optional[str] = None
+    config: Optional[dict] = None
+
+
+# ── Helper ────────────────────────────────────────────────────────────────────
+
+def map_config_to_state(state: CampaignState, config: dict) -> None:
+    """Map dynamic configuration parameters into the CampaignState model."""
+    if "product_name" in config:
+        state.product_name = config["product_name"]
+    if "product_description" in config:
+        state.product_description = config["product_description"]
+    if "target_audience" in config:
+        state.target_audience = config["target_audience"]
+    if "industry" in config:
+        state.industry = config["industry"]
+    if "location" in config:
+        state.location = config["location"]
+    if "platforms" in config:
+        state.platforms = config["platforms"]
+    if "scrapers" in config:
+        state.scrapers = config["scrapers"]
+    if "image_mode" in config:
+        state.image_mode = config["image_mode"]
+    if "instructions" in config:
+        state.instructions = config["instructions"]
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=CampaignState, status_code=201)
-async def create_campaign(body: CreateCampaignRequest) -> CampaignState:
-    """Create a new campaign record (in-memory for now)."""
-    return CampaignState(**body.model_dump())
+async def create_campaign(
+    body: CreateCampaignRequest,
+    storage: StorageService = Depends(get_storage),
+) -> CampaignState:
+    """Create a persistent campaign and store workflow and config parameters."""
+    state = CampaignState(
+        campaign_id=body.id,
+        workflow_name=body.workflow,
+        product_name=body.name,
+        status="draft"
+    )
+    map_config_to_state(state, body.config)
+
+    await storage.save(f"campaign_{body.id}", state.model_dump(mode="json"))
+    return state
 
 
 @router.get("/{campaign_id}", response_model=CampaignState)
-async def get_campaign(campaign_id: str) -> CampaignState:
-    """Retrieve a campaign by ID. Requires persistent storage (Phase 2)."""
-    # TODO (Phase 2): load from database / storage service
-    raise HTTPException(
-        status_code=501,
-        detail="Persistent campaign retrieval requires database setup (Phase 2).",
-    )
+async def get_campaign(
+    campaign_id: str,
+    storage: StorageService = Depends(get_storage),
+) -> CampaignState:
+    """Retrieve metadata, config, status, and results for a campaign."""
+    data = await storage.load(f"campaign_{campaign_id}")
+    if not data:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return CampaignState(**data)
+
+
+@router.patch("/{campaign_id}", response_model=CampaignState)
+async def update_campaign(
+    campaign_id: str,
+    body: UpdateCampaignRequest,
+    storage: StorageService = Depends(get_storage),
+) -> CampaignState:
+    """Update campaign metadata and configuration."""
+    data = await storage.load(f"campaign_{campaign_id}")
+    if not data:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    state = CampaignState(**data)
+    if body.name is not None:
+        state.product_name = body.name
+    if body.workflow is not None:
+        state.workflow_name = body.workflow
+    if body.config is not None:
+        map_config_to_state(state, body.config)
+
+    await storage.save(f"campaign_{campaign_id}", state.model_dump(mode="json"))
+    return state
 
 
 @router.post("/{campaign_id}/run", response_model=CampaignState)
 async def run_campaign(
     campaign_id: str,
-    body: RunCampaignRequest,
-    create_body: CreateCampaignRequest,
     orchestrator: MarketingOrchestrator = Depends(get_orchestrator),
+    storage: StorageService = Depends(get_storage),
 ) -> CampaignState:
-    """
-    Execute a workflow against the campaign.
-    Combines create + run in a single step for MVP convenience.
-    """
-    state = CampaignState(
-        campaign_id=campaign_id,
-        **create_body.model_dump(),
-    )
+    """Execute the configured campaign workflow using stored inputs."""
+    data = await storage.load(f"campaign_{campaign_id}")
+    if not data:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    state = CampaignState(**data)
+    state.status = "running"
+    state.add_log(f"Starting execution of workflow: {state.workflow_name}")
+    await storage.save(f"campaign_{campaign_id}", state.model_dump(mode="json"))
+
     try:
-        result = await orchestrator.run(body.workflow, state)
+        result = await orchestrator.run(state.workflow_name, state)
     except ValueError as exc:
+        state.fail(str(exc))
+        await storage.save(f"campaign_{campaign_id}", state.model_dump(mode="json"))
         raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        state.fail(f"Unhandled error during execution: {str(exc)}")
+        await storage.save(f"campaign_{campaign_id}", state.model_dump(mode="json"))
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    await storage.save(f"campaign_{campaign_id}", result.model_dump(mode="json"))
     return result
-
-
-@router.get("", response_model=list[str])
-async def list_workflows(
-    orchestrator: MarketingOrchestrator = Depends(get_orchestrator),
-) -> list[str]:
-    """Return all registered workflow names."""
-    return orchestrator.available_workflows()

@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from marketing_agent.api.routes import campaigns, health, leads
+from marketing_agent.api.routes import campaigns, health, leads, workflows
 from marketing_agent.configs.settings import get_settings
 from marketing_agent.core.logging import configure_logging
 
@@ -22,6 +22,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(campaigns.router, prefix="/campaigns", tags=["campaigns"])
     app.include_router(leads.router, prefix="/leads", tags=["leads"])
+    app.include_router(workflows.router, prefix="/workflows", tags=["workflows"])
 
     return app
 

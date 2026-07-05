@@ -37,11 +37,17 @@ export default async function CampaignsPage() {
                 {new Date(c.created_at).toLocaleString()}
               </p>
               <div className="mt-3 flex flex-wrap gap-1">
-                {c.platforms.map((p) => (
-                  <span key={p} className="chip chip-on">
-                    {PLATFORM_LABELS[p]}
-                  </span>
-                ))}
+                {c.workflow === "lead_generation" ? (
+                  <span className="chip chip-on">Lead Generation</span>
+                ) : c.platforms.length > 0 ? (
+                  c.platforms.map((p) => (
+                    <span key={p} className="chip chip-on">
+                      {PLATFORM_LABELS[p]}
+                    </span>
+                  ))
+                ) : (
+                  <span className="chip">Campaign</span>
+                )}
               </div>
             </Link>
           ))}

@@ -4,8 +4,7 @@ Upload a product, generate ready-to-post content and creatives for Instagram,
 Facebook, and LinkedIn, then review and publish or schedule to Instagram and
 Facebook via the Meta Graph API.
 
-This is the active MVP, built from `AgenticMarketing_MVP Goal.pdf`. The previous
-FastAPI lead-generation app is preserved under `../../legacy/fastapi-leadgen`.
+This is the active MVP, built from `AgenticMarketing_MVP Goal.pdf`.
 
 ## Stack
 - Next.js (App Router) + TypeScript
@@ -33,7 +32,7 @@ With no Supabase keys, the app runs in demo mode:
 This lets you click through Add product → Generate campaign → Review immediately.
 
 ## Full setup
-1. Create a Supabase project. Run `supabase/schema.sql` in the SQL editor.
+1. Create a Supabase project. Run the root `supabase/schema.sql` in the SQL editor.
 2. Create a public Storage bucket `product-assets` (the SQL also does this).
 3. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`.

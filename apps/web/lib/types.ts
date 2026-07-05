@@ -58,6 +58,42 @@ export interface CampaignAsset {
   error: string | null;
 }
 
+// ── Polymorphic B2B Lead Gen Types ───────────────────────────────────────────
+export interface Lead {
+  id: string;
+  name: string;
+  category: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  rating: number | null;
+  reviews: number | null;
+  source: string;
+  score: number | null;
+  score_reason: string | null;
+  priority: "high" | "medium" | "low" | null;
+  outreach: {
+    email?: string;
+    whatsapp?: string;
+    image_url?: string | null;
+    image_prompt?: string;
+    image_mode?: string;
+  };
+  status?: string;
+  error?: string | null;
+}
+
+export type WorkflowType = "organic_campaign" | "lead_generation" | "content_only";
+
+export type CampaignConfig =
+  | { workflow: "organic_campaign" | "content_only"; data: { platforms: Platform[]; instructions?: string; image_mode?: string } }
+  | { workflow: "lead_generation"; data: { location: string; target_audience?: string; scrapers?: string[]; instructions?: string } };
+
+export type CampaignResults =
+  | { workflow: "organic_campaign" | "content_only"; assets: CampaignAsset[] }
+  | { workflow: "lead_generation"; leads: Lead[] };
+
 export interface Campaign {
   id: string;
   user_id: string;
@@ -66,6 +102,13 @@ export interface Campaign {
   platforms: Platform[];
   status: CampaignStatus;
   created_at: string;
+  
+  // Polymorphic Workflow fields
+  workflow: WorkflowType;
+  config: CampaignConfig;
+  results: CampaignResults;
+
+  // Legacy / Organic compatibility
   assets: CampaignAsset[];
 }
 

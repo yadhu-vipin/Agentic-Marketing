@@ -4,6 +4,7 @@ import type {
   CampaignStatus,
   Product,
   ProductInput,
+  CampaignResults,
 } from "@/lib/types";
 import type { NewCampaignInput, Repo } from "./repo";
 
@@ -62,7 +63,7 @@ export class MemoryRepo implements Repo {
     input: NewCampaignInput,
   ): Promise<Campaign> {
     const campaignId = uid();
-    const assets: CampaignAsset[] = input.assets.map((a) => ({
+    const assets: CampaignAsset[] = (input.assets ?? []).map((a) => ({
       ...a,
       id: uid(),
       campaign_id: campaignId,
@@ -75,6 +76,9 @@ export class MemoryRepo implements Repo {
       platforms: input.platforms,
       status: "ready",
       created_at: new Date().toISOString(),
+      workflow: input.workflow,
+      config: input.config,
+      results: input.results,
       assets,
     };
     store().campaigns.unshift(campaign);
@@ -97,6 +101,18 @@ export class MemoryRepo implements Repo {
   ): Promise<void> {
     const campaign = store().campaigns.find((c) => c.id === campaignId);
     if (campaign) campaign.status = status;
+  }
+
+  async updateCampaignResults(
+    campaignId: string,
+    results: CampaignResults,
+    status?: CampaignStatus,
+  ): Promise<Campaign> {
+    const campaign = store().campaigns.find((c) => c.id === campaignId);
+    if (!campaign) throw new Error("Campaign not found");
+    campaign.results = results;
+    if (status) campaign.status = status;
+    return campaign;
   }
 
   async updateAsset(

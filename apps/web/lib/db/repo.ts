@@ -5,6 +5,9 @@ import type {
   Platform,
   Product,
   ProductInput,
+  WorkflowType,
+  CampaignConfig,
+  CampaignResults,
 } from "@/lib/types";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { MemoryRepo } from "./memory";
@@ -13,7 +16,10 @@ import { SupabaseRepo } from "./supabase-repo";
 export interface NewCampaignInput {
   product: Product;
   platforms: Platform[];
-  assets: Omit<CampaignAsset, "id" | "campaign_id">[];
+  workflow: WorkflowType;
+  config: CampaignConfig;
+  results: CampaignResults;
+  assets?: Omit<CampaignAsset, "id" | "campaign_id">[];
 }
 
 export interface Repo {
@@ -28,6 +34,12 @@ export interface Repo {
     campaignId: string,
     status: CampaignStatus,
   ): Promise<void>;
+
+  updateCampaignResults(
+    campaignId: string,
+    results: CampaignResults,
+    status?: CampaignStatus,
+  ): Promise<Campaign>;
 
   updateAsset(
     campaignId: string,

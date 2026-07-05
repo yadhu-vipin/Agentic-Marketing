@@ -8,7 +8,6 @@ Source of truth: apps/web/lib/meta/publish.ts → publishFacebook()
 """
 
 import logging
-from urllib.parse import urlencode
 
 import httpx
 
@@ -49,7 +48,8 @@ class MetaFacebookPublisher(PublisherService):
         }
 
         if request.scheduled_time:
-            import math, datetime as dt
+            import math
+            import datetime as dt
             epoch = math.floor(
                 dt.datetime.fromisoformat(request.scheduled_time).timestamp()
             )

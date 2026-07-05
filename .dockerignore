@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+venv
+node_modules
+apps/web/node_modules
+apps/web/.next
+apps/web/.turbo
+outputs
+results
+*.pdf
+.pytest_cache
+.mypy_cache
+.ruff_cache

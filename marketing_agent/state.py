@@ -13,10 +13,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from marketing_agent.models.analytics import AnalyticsReport
-    from marketing_agent.models.content import ContentAsset
-    from marketing_agent.models.lead import Lead
-    from marketing_agent.models.publishing import PublishResult
+    pass
 
 
 class CampaignState(BaseModel):
@@ -32,6 +29,9 @@ class CampaignState(BaseModel):
     industry: Optional[str] = None
     location: Optional[str] = None
     platforms: list[str] = []
+    scrapers: list[str] = []
+    image_mode: str = "none"
+    instructions: str = ""
 
     # ── Research outputs (written by ResearchCapability) ─────────────────────────
     leads: list[Any] = []           # list[Lead] — Any to avoid circular import

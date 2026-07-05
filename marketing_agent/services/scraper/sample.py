@@ -1,15 +1,11 @@
 """
 SampleScraper — returns canned fixtures for demo / offline testing.
-
-Source of truth: legacy/fastapi-leadgen/src/lead_generation/scrapers/sample.py
-Phase 2: port the _SAMPLE fixture list here.
 """
 
 from marketing_agent.models.lead import Lead
 from marketing_agent.models.research import SearchCriteria
-from marketing_agent.services.scraper.base import ScraperService
+from marketing_agent.services.scraper.base import BaseScraper, register_scraper
 
-# Phase 2: move full fixture list from legacy/…/scrapers/sample.py
 _SAMPLE: list[dict] = [
     {
         "name": "Toit Brewpub",
@@ -32,10 +28,14 @@ _SAMPLE: list[dict] = [
 ]
 
 
-class SampleScraper(ScraperService):
+@register_scraper
+class SampleScraper(BaseScraper):
     name = "sample"
     label = "Sample (demo data)"
 
     async def run(self, criteria: SearchCriteria) -> list[Lead]:
+        self.emit("Starting sample scraper...")
         limit = criteria.max_results_per_target
-        return [Lead(**d) for d in _SAMPLE[:limit]]
+        leads = [Lead(**d) for d in _SAMPLE[:limit]]
+        self.emit(f"Found {len(leads)} sample leads.")
+        return leads
