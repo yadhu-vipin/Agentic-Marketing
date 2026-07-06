@@ -399,7 +399,20 @@ function AssetCard({
       </div>
 
       {asset.external_id && (
-        <p className="text-xs text-muted">Meta ID: {asset.external_id}</p>
+        <p className="text-xs text-muted">
+          {asset.external_id.startsWith("http") ? (
+            <a
+              href={asset.external_id}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline inline-flex items-center gap-1"
+            >
+              View on {asset.platform === "instagram" ? "Instagram" : "Facebook"} ↗
+            </a>
+          ) : (
+            `Meta ID: ${asset.external_id}`
+          )}
+        </p>
       )}
       {message && <p className="text-sm text-primary">{message}</p>}
       {(error || asset.error) && (

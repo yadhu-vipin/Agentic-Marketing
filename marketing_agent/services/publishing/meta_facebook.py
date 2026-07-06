@@ -71,6 +71,22 @@ class MetaFacebookPublisher(PublisherService):
 
         external_id = str(data.get("post_id") or data.get("id", ""))
         logger.info("[MetaFacebookPublisher] published id=%s", external_id)
+
+        # Attempt to retrieve post permalink_url
+        if external_id:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    permalink_res = await client.get(
+                        f"{self._base}/{external_id}",
+                        params={"fields": "permalink_url", "access_token": self._token},
+                    )
+                    if permalink_res.is_success:
+                        permalink = permalink_res.json().get("permalink_url")
+                        if permalink:
+                            external_id = permalink
+            except Exception as e:
+                logger.warning("[MetaFacebookPublisher] failed to fetch permalink_url: %s", e)
+
         return PublishResult(
             external_id=external_id,
             platform=self.platform,

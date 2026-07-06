@@ -99,6 +99,22 @@ class MetaInstagramPublisher(PublisherService):
 
         external_id = str(published.get("id", ""))
         logger.info("[MetaInstagramPublisher] published id=%s", external_id)
+
+        # Attempt to retrieve post permalink
+        if external_id:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    permalink_res = await client.get(
+                        f"{self._base}/{external_id}",
+                        params={"fields": "permalink", "access_token": self._token},
+                    )
+                    if permalink_res.is_success:
+                        permalink = permalink_res.json().get("permalink")
+                        if permalink:
+                            external_id = permalink
+            except Exception as e:
+                logger.warning("[MetaInstagramPublisher] failed to fetch permalink: %s", e)
+
         return PublishResult(
             external_id=external_id,
             platform=self.platform,
