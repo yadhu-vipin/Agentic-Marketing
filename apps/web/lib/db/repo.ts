@@ -9,8 +9,6 @@ import type {
   CampaignConfig,
   CampaignResults,
 } from "@/lib/types";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { MemoryRepo } from "./memory";
 import { SupabaseRepo } from "./supabase-repo";
 
 export interface NewCampaignInput {
