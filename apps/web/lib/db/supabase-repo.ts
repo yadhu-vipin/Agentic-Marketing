@@ -94,8 +94,16 @@ function mapCampaign(row: DbRow): Campaign {
   };
 }
 
+function isUuid(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 export class SupabaseRepo implements Repo {
   async createProduct(userId: string, input: ProductInput): Promise<Product> {
+    if (!isUuid(userId)) {
+      throw new Error("Authentication required. Please sign in to create products.");
+    }
     const { data, error } = await client()
       .from("products")
       .insert({
@@ -115,6 +123,7 @@ export class SupabaseRepo implements Repo {
   }
 
   async listProducts(userId: string): Promise<Product[]> {
+    if (!isUuid(userId)) return [];
     const { data, error } = await client()
       .from("products")
       .select("*")
@@ -125,6 +134,7 @@ export class SupabaseRepo implements Repo {
   }
 
   async getProduct(userId: string, id: string): Promise<Product | null> {
+    if (!isUuid(userId) || !isUuid(id)) return null;
     const { data, error } = await client()
       .from("products")
       .select("*")
@@ -139,6 +149,9 @@ export class SupabaseRepo implements Repo {
     userId: string,
     input: NewCampaignInput,
   ): Promise<Campaign> {
+    if (!isUuid(userId)) {
+      throw new Error("Authentication required. Please sign in to create campaigns.");
+    }
     const supabase = client();
     const { data: campaignRow, error: campaignError } = await supabase
       .from("campaigns")
@@ -185,6 +198,7 @@ export class SupabaseRepo implements Repo {
   }
 
   async listCampaigns(userId: string): Promise<Campaign[]> {
+    if (!isUuid(userId)) return [];
     const { data, error } = await client()
       .from("campaigns")
       .select("*, campaign_assets(*)")
@@ -195,6 +209,7 @@ export class SupabaseRepo implements Repo {
   }
 
   async getCampaign(userId: string, id: string): Promise<Campaign | null> {
+    if (!isUuid(userId) || !isUuid(id)) return null;
     const { data, error } = await client()
       .from("campaigns")
       .select("*, campaign_assets(*)")
@@ -204,6 +219,7 @@ export class SupabaseRepo implements Repo {
     if (error) throw new Error(error.message);
     return data ? mapCampaign(data) : null;
   }
+
 
   async updateCampaignStatus(
     campaignId: string,
