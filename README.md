@@ -4,6 +4,8 @@ A social campaign generation product: upload product info and images, generate
 ready-to-post content and creatives for Instagram, Facebook, and LinkedIn, then
 publish or schedule to Meta platforms.
 
+https://agentic-marketing-tester.vercel.app
+
 ## Repository layout
 ```
 apps/web/                 → Active MVP: Next.js social campaign studio
