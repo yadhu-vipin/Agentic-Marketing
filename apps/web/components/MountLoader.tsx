@@ -56,7 +56,7 @@ export function MountLoader() {
         <div className="relative h-16 w-16 flex items-center justify-center">
           <span className="absolute h-full w-full rounded-full border-2 border-primary/10" />
           <span className="absolute h-full w-full rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-          <span className="h-3 w-3 rounded-full bg-primary shadow-[0_0_12px_#4edea3]" />
+          <span className="h-3 w-3 rounded-full bg-primary shadow-[0_0_12px_#0055ff]" />
         </div>
 
         {/* Brand details */}

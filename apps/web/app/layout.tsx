@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import HeaderAuth from "@/components/HeaderAuth";
 import { InteractiveCanvas } from "@/components/InteractiveCanvas";
 import { MountLoader } from "@/components/MountLoader";
+import { CustomCursor } from "@/components/CustomCursor";
 
 export const metadata: Metadata = {
   title: "Agentic Marketing — Social Campaign Generator",
@@ -30,12 +31,13 @@ export default async function RootLayout({
       <body className="antialiased grid-bg relative">
         <MountLoader />
         <InteractiveCanvas />
+        <CustomCursor />
         <header className="sticky top-0 z-50 border-b border-border/80 bg-bg/75 backdrop-blur-md">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
             <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight text-foreground transition hover:opacity-90">
               <div className="relative flex h-3.5 w-3.5 items-center justify-center">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/30 opacity-75" />
-                <span className="relative h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
+                <span className="relative h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_12px_rgba(0,85,255,0.7)]" />
               </div>
               <span className="bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent font-extrabold text-base">
                 Agentic Marketing
