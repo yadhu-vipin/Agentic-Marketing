@@ -35,24 +35,37 @@ export default async function CampaignPage({
 
   return (
     <div className="space-y-6">
+      {/* Back and Title */}
       <div>
-        <Link href="/campaigns" className="text-sm text-accent">
-          ← Campaigns
+        <Link href="/campaigns" className="text-xs font-semibold text-primary/95 hover:text-primary flex items-center gap-1 transition">
+          <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>Back to Campaigns</span>
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">{campaign.product_name}</h1>
-        <p className="text-muted">
+        <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          {campaign.product_name}
+        </h1>
+        <p className="text-xs text-muted mt-0.5">
           {campaign.workflow === "lead_generation"
-            ? "Review discovered leads and outreach drafts."
-            : "Review, edit, then publish or schedule each post."}
+            ? "Review scraped Google Maps profiles, matching intent criteria, and outreach drafts."
+            : "Review platform-specific copy versions, custom AI graphics, and direct publishing status."}
         </p>
       </div>
 
       {campaign.workflow !== "lead_generation" && !metaConfigured && (
-        <div className="card border-accent/30 text-sm text-muted">
-          Meta publishing is not configured on the backend. Add{" "}
-          <code>META_ACCESS_TOKEN</code>, <code>META_PAGE_ID</code>, and{" "}
-          <code>META_IG_USER_ID</code> to Railway to publish to Facebook and
-          Instagram. You can still review and edit content now.
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs text-amber-400 flex items-start gap-3 shadow-md">
+          <div className="mt-0.5 text-amber-400">
+            <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <span className="font-semibold block text-[13px]">Meta API integration is not configured on the backend</span>
+            <p className="text-muted/90 leading-normal">
+              To publish posts directly to Facebook/Instagram pages from the dashboard, you need to provide your <code>META_ACCESS_TOKEN</code>, <code>META_PAGE_ID</code>, and <code>META_IG_USER_ID</code> as environment variables on Railway. You can still generate and edit all copies here in the meantime.
+            </p>
+          </div>
         </div>
       )}
 
