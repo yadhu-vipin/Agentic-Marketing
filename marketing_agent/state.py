@@ -36,6 +36,7 @@ class CampaignState(BaseModel):
     # ── Research outputs (written by ResearchCapability) ─────────────────────────
     leads: list[Any] = []           # list[Lead] — Any to avoid circular import
     research_summary: Optional[str] = None
+    research_report: Optional[dict] = None
 
     # ── Planning outputs (written by PlanningCapability) ─────────────────────────
     content_plan: list[dict] = []   # per-platform brief dicts

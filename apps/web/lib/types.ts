@@ -31,7 +31,7 @@ export interface ProductInput {
   image_urls?: string[];
 }
 
-export type CampaignStatus = "draft" | "ready" | "partially_published" | "published";
+export type CampaignStatus = "draft" | "researching" | "ready" | "partially_published" | "published" | "running" | "failed";
 
 export type AssetStatus =
   | "draft"
@@ -92,7 +92,7 @@ export type CampaignConfig =
 
 export type CampaignResults =
   | { workflow: "organic_campaign" | "content_only"; assets: CampaignAsset[] }
-  | { workflow: "lead_generation"; leads: Lead[] };
+  | { workflow: "lead_generation"; leads: Lead[]; research_report?: any };
 
 export interface Campaign {
   id: string;
@@ -110,6 +110,9 @@ export interface Campaign {
 
   // Legacy / Organic compatibility
   assets: CampaignAsset[];
+
+  // Phase 2 Demo Fields
+  research_report?: any;
 }
 
 export interface CurrentUser {

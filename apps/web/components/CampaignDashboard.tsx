@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   PLATFORM_LABELS,
   type Campaign,
@@ -8,36 +8,150 @@ import {
 } from "@/lib/types";
 
 export function CampaignDashboard({
-  campaign,
+  campaign: initialCampaign,
   metaConfigured,
 }: {
   campaign: Campaign;
   metaConfigured: boolean;
 }) {
-  if (!campaign) {
-    return (
-      <div className="card text-center py-12 text-muted flex flex-col items-center justify-center gap-3">
-        <span>No campaign data available.</span>
+  const [campaign, setCampaign] = useState(initialCampaign);
+  const [activeTab, setActiveTab] = useState<"research" | "content">("research");
+  const [isPolling, setIsPolling] = useState(false);
+  const [triggeringResearch, setTriggeringResearch] = useState(false);
+
+  // Poll campaign status if researching
+  useEffect(() => {
+    if (campaign.status === "researching" || isPolling) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/campaigns/${campaign.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.campaign) {
+              setCampaign(data.campaign);
+              if (data.campaign.status !== "researching") {
+                setIsPolling(false);
+              }
+            }
+          }
+        } catch (e) {}
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [campaign.id, campaign.status, isPolling]);
+  
+  // Auto scroll to top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleRunResearch = async () => {
+    setTriggeringResearch(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}/research`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setCampaign(data.campaign);
+        setIsPolling(true);
+      }
+    } catch (e) {
+       console.error("Failed to run research", e);
+    }
+    setTriggeringResearch(false);
+  };
+  
+  const researchReport = (campaign.results as any)?.research_report;
+
+  return (
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex border-b border-border/40">
+        <button
+          className={`py-3 px-6 font-semibold text-sm transition ${activeTab === "research" ? "text-primary border-b-2 border-primary" : "text-muted hover:text-foreground"}`}
+          onClick={() => setActiveTab("research")}
+        >
+          Research & Strategy
+        </button>
+        <button
+          className={`py-3 px-6 font-semibold text-sm transition ${activeTab === "content" ? "text-primary border-b-2 border-primary" : "text-muted hover:text-foreground"}`}
+          onClick={() => setActiveTab("content")}
+        >
+          {campaign.workflow === "lead_generation" ? "Discovered Leads" : "Generated Content"}
+        </button>
       </div>
-    );
-  }
 
-  if (campaign.workflow === "lead_generation") {
-    const leads = campaign.results && campaign.results.workflow === "lead_generation"
-      ? campaign.results.leads
-      : [];
-    return <LeadsDashboard leads={leads} />;
-  }
+      {activeTab === "research" && (
+         <div className="space-y-6">
+           {!researchReport && campaign.status !== "researching" && (
+             <div className="card py-12 flex flex-col items-center gap-4 text-center">
+                <p className="text-muted text-sm">Research has not been executed yet.</p>
+                <button className="btn px-6 py-2" onClick={handleRunResearch} disabled={triggeringResearch}>
+                  {triggeringResearch ? "Starting..." : "Run Research"}
+                </button>
+             </div>
+           )}
+           {campaign.status === "researching" && (
+             <div className="card py-12 flex flex-col items-center gap-4 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-muted text-sm animate-pulse">Running Research Agents... This may take a minute.</p>
+             </div>
+           )}
+           {researchReport && campaign.status !== "researching" && (
+             <div className="grid gap-6 md:grid-cols-2">
+                <div className="card space-y-3">
+                   <h3 className="font-bold text-primary">Overview</h3>
+                   <p className="text-sm text-foreground/80 leading-relaxed">{researchReport.overview || "No overview available."}</p>
+                </div>
+                <div className="card space-y-3">
+                   <h3 className="font-bold text-primary">Target Audience</h3>
+                   <p className="text-sm text-foreground/80 leading-relaxed">{researchReport.target_audience || "No target audience defined."}</p>
+                </div>
+                <div className="card space-y-3 col-span-1 md:col-span-2">
+                   <h3 className="font-bold text-primary">Competitor Analysis</h3>
+                   {researchReport.competitors && researchReport.competitors.length > 0 ? (
+                     <div className="grid gap-4 md:grid-cols-3">
+                       {researchReport.competitors.map((c: any, i: number) => (
+                         <div key={i} className="p-3 bg-surface rounded-lg border border-border/40">
+                           <h4 className="font-semibold text-sm mb-1">{c.name}</h4>
+                           <p className="text-xs text-muted mb-2">{c.description}</p>
+                           <p className="text-[11px] text-primary/80"><span className="font-bold">Weakness:</span> {c.weakness}</p>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <p className="text-sm text-foreground/80">No competitor analysis available.</p>
+                   )}
+                </div>
+                <div className="card space-y-3 col-span-1 md:col-span-2">
+                   <h3 className="font-bold text-primary">Strategic Angle</h3>
+                   <p className="text-sm text-foreground/80 leading-relaxed">{researchReport.strategic_angle || "No strategy provided."}</p>
+                </div>
+             </div>
+           )}
+         </div>
+      )}
 
-  const assets = Array.isArray(campaign.assets) ? campaign.assets : [];
+      {activeTab === "content" && (
+        <>
+          {campaign.workflow === "lead_generation" ? (
+             <LeadsDashboard leads={campaign.results && campaign.results.workflow === "lead_generation" ? campaign.results.leads : []} />
+          ) : (
+             <AssetsDashboard assets={campaign.assets || []} campaignId={campaign.id} metaConfigured={metaConfigured} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
+function AssetsDashboard({ assets, campaignId, metaConfigured }: { assets: CampaignAsset[], campaignId: string, metaConfigured: boolean }) {
   if (assets.length === 0) {
     return (
       <div className="card text-center py-12 text-muted col-span-2 flex flex-col items-center justify-center gap-3 border-dashed border-2">
         <svg className="h-10 w-10 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
-        <span>No campaign assets generated. Try running the generator again.</span>
+        <span>No campaign assets generated.</span>
       </div>
     );
   }
@@ -47,7 +161,7 @@ export function CampaignDashboard({
       {assets.map((asset) => (
         <AssetCard
           key={asset?.id}
-          campaignId={campaign.id}
+          campaignId={campaignId}
           initial={asset}
           metaConfigured={metaConfigured}
         />

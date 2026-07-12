@@ -67,9 +67,6 @@ export async function POST(request: Request) {
       });
 
       try {
-        // Update status to running
-        await repo.updateCampaignStatus(campaign.id, "running" as any);
-
         // 2. Initialize in the backend
         await backendClient.createCampaign(campaign.id, campaign.product_name, "lead_generation", {
           product_name: product.name,
@@ -81,17 +78,7 @@ export async function POST(request: Request) {
           instructions,
         });
 
-        // 3. Run execution
-        const finalState = await backendClient.runCampaign(campaign.id);
-
-        // 4. Persist results
-        const updatedCampaign = await repo.updateCampaignResults(
-          campaign.id,
-          { workflow: "lead_generation", leads: finalState.leads || [] },
-          "ready"
-        );
-
-        return NextResponse.json({ campaign: updatedCampaign, usedAi: true });
+        return NextResponse.json({ campaign, usedAi: false });
       } catch (backendError) {
         console.error("[campaign] backend execution failed:", backendError);
         await repo.updateCampaignStatus(campaign.id, "failed" as any);
