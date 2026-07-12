@@ -1,9 +1,6 @@
-from marketing_agent.services.storage.base import StorageService
-from marketing_agent.services.storage.postgres_storage import PostgresStorageService
-from marketing_agent.services.storage.json_storage import JSONStorageService
+from marketing_agent.services.storage.campaign_repository import CampaignRepository
 
 __all__ = [
-    "StorageService",
-    "PostgresStorageService",
-    "JSONStorageService",
+    "CampaignRepository",
 ]
+

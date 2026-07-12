@@ -1,10 +1,11 @@
 """Shared FastAPI dependencies."""
 
 from functools import lru_cache
+from typing import Generator
+from sqlalchemy.orm import Session
 
 from marketing_agent.orchestrator import MarketingOrchestrator
-from marketing_agent.services.storage.base import StorageService
-from marketing_agent.services.storage.postgres_storage import PostgresStorageService
+from marketing_agent.services.storage.postgres_storage import get_session
 
 
 @lru_cache
@@ -13,7 +14,11 @@ def get_orchestrator() -> MarketingOrchestrator:
     return MarketingOrchestrator()
 
 
-@lru_cache
-def get_storage() -> StorageService:
-    """Singleton storage service injected into route handlers."""
-    return PostgresStorageService()
+def get_db() -> Generator[Session, None, None]:
+    """Database session dependency for routing."""
+    db = get_session()
+    try:
+        yield db
+    finally:
+        db.close()
+

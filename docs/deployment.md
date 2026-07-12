@@ -20,7 +20,6 @@ Apply the authoritative schema file to your Supabase PostgreSQL instance:
    - `public.products` (Product metadata and branding configs)
    - `public.campaigns` (Campaign details, platforms, and orchestrator inputs)
    - `public.campaign_assets` (Generated images, ad copy, and social media media records)
-   - `public.campaign_states` (FastAPI backend campaign execution state logs)
 
 ### B. Create the Storage Bucket
 1. Open the Supabase Dashboard and navigate to the **Storage** tab.

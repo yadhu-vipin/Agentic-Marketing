@@ -50,23 +50,16 @@ create table if not exists public.campaign_assets (
   error text
 );
 
--- ── Campaign States (FastAPI agent persistence) ─────────────────────────────
-create table if not exists public.campaign_states (
-  key varchar(255) primary key,
-  data jsonb not null,
-  updated_at timestamptz not null default now()
-);
+
 
 create index if not exists products_user_idx on public.products (user_id);
 create index if not exists campaigns_user_idx on public.campaigns (user_id);
 create index if not exists assets_campaign_idx on public.campaign_assets (campaign_id);
-create index if not exists campaign_states_key_idx on public.campaign_states (key);
 
 -- ── Row level security ───────────────────────────────────────────────────────
 alter table public.products enable row level security;
 alter table public.campaigns enable row level security;
 alter table public.campaign_assets enable row level security;
-alter table public.campaign_states enable row level security;
 
 create policy "own products" on public.products
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -88,9 +81,6 @@ create policy "own campaign assets" on public.campaign_assets
     )
   );
 
--- Backend campaign states are managed by system services, but can be viewed by their owners
-create policy "system and owner campaign states" on public.campaign_states
-  for all using (true) with check (true);
 
 -- ── Storage bucket ───────────────────────────────────────────────────────────
 -- Create a public bucket named 'product-assets' in Storage, or run:

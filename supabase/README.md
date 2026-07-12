@@ -18,8 +18,4 @@ both the Next.js frontend and the FastAPI backend.
 
 ## Notes
 
-- The backend (`marketing_agent`) uses the `campaign_states` table via SQLAlchemy.
-  That table is auto-created by the Python ORM on startup, but is also defined
-  in `schema.sql` for completeness.
-- The frontend (`apps/web`) uses the `products`, `campaigns`, and `campaign_assets`
-  tables via the Supabase JS client.
+- The frontend (`apps/web`) and backend (`marketing_agent`) both use the `products`, `campaigns`, and `campaign_assets` tables as their source of truth.
