@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     max_results_per_target: int = 5
 
     # ── Database ─────────────────────────────────────────────────────────────────
-    database_url: str = Field(default="postgresql://postgres:postgres@localhost:5432/agentic_marketing")
+    database_url: str = Field(default="postgresql+psycopg://postgres:postgres@localhost:5432/agentic_marketing")
     # ── Redis ────────────────────────────────────────────────────────────────────
     redis_url: str = "redis://localhost:6379/0"
 

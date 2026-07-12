@@ -40,7 +40,7 @@ prod = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["marketing_agent*"]
+include = ["marketing_agent*", "research*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
